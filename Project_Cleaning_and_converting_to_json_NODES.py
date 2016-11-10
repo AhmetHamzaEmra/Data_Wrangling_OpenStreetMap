@@ -4,7 +4,7 @@ import re
 import codecs
 import json
 import os
-path='C:\\Users\\aemra\\Documents\\GitHub\\Wrangle-OpenStreetMap-Data'
+path='C:\\Users\\aemra\\Documents\\Classes'
 os.chdir(path)
 lower = re.compile(r'^([a-z]|_)*$')
 lower_colon = re.compile(r'^([a-z]|_)*:([a-z]|_)*$')
@@ -15,6 +15,17 @@ created = {'version': None, 'timestamp': None, 'changeset': None, 'user': None,
 L = []
 CREATED = [ "version", "changeset", "timestamp", "user", "uid"]
 
+def update_zipcode(zipcode):
+    zipcode=list(zipcode)
+    if len(zipcode)==5:
+        pass
+    elif len(zipcode)==8:
+        zipcode=zipcode[2:]
+    elif len(zipcode)==10:
+        zipcode=zipcode[:5]
+    else:
+        return None
+    return int(''.join(zipcode))
 def update_name(name, mapping):
     for v in mapping:
         #print v
@@ -22,7 +33,8 @@ def update_name(name, mapping):
             name=name.replace(v,mapping[v])       
             return name
         else:
-            pass
+            return name
+        
 mapping = { "St": "Street",
             "St.": "Street",
             "Ave": "Avenue",
@@ -45,7 +57,7 @@ expected = ["Street", "Avenue", "Boulevard", "Drive", "Court", "Place", "Square"
 
 def shape_element(element):
     node = {}
-    if element.tag == "node" :
+    if element.tag == 'node' :
         # YOUR CODE HERE
         created = {}
         for e in element.attrib.keys():
@@ -78,22 +90,30 @@ def shape_element(element):
                     pass
                 elif re.search(r'\w+:\w+:\w+', subtag.get('k')):
                     pass
+                elif subtag.get('k')=='addr:postcode':
+                    node['Zipcode']=update_zipcode(subtag.get('v'))
                 elif subtag.get('k').startswith('addr:'):
-                    address[subtag.get('k')[5:]] = update_name(subtag.attrib['k'],mapping)
+                    address[subtag.get('k')[5:]] = update_name(subtag.attrib['v'],mapping)
                     node['address'] = address
                 elif subtag.get('k').startswith("FIXME") or subtag.get('k').startswith("FIXME"):
                     pass
-                elif subtag.get("k").startswith('Zipcode') and not subtag.get('v').startswith("77"):
-                    pass
                 else:
                     node[subtag.get('k')] = subtag.get('v')
+
             else:
                 if subtag.tag == 'nd':
+                    
                     node_refs.append(subtag.get('ref'))
+                    
                 else:
                     pass
+
+        
         if node_refs:
             node['node_refs'] = node_refs
+            
+
+        
         return node
     else:
         return None
@@ -123,3 +143,4 @@ def test():
     
 if __name__ == "__main__":
     test()
+
